@@ -81,3 +81,86 @@ Common issues fixed by reflection:
 - Fixing column name errors
 - Improving query logic and structure
 - Ensuring proper aggregation functions
+
+
+
+---
+
+## Assignment: Personal Finance Tracker with SQL Reflection Agent
+
+### Context
+
+You have a database of personal transactions (expenses and income). Build an agentic workflow where an LLM converts natural language questions about your finances into SQL, executes them, reflects on the results, and self-corrects — exactly like the lab but on a domain you actually care about.
+
+---
+
+### The Database
+
+Create a SQLite DB with a single event-sourced `transactions` table:
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | INTEGER | Auto-increment PK |
+| `date` | DATE | Transaction date |
+| `category` | TEXT | `food`, `rent`, `salary`, `entertainment`, `transport`, `utilities` |
+| `type` | TEXT | `income` or `expense` |
+| `amount` | REAL | Always positive |
+| `description` | TEXT | Short note |
+| `payment_method` | TEXT | `cash`, `card`, `upi` |
+
+Seed it with at least 6 months of random data (mix of income and expenses).
+
+---
+
+### Tasks
+
+**Task 1 — SQL Generator**
+
+Write `generate_sql(question, schema, model)` that takes a plain-English question and returns a SQL query. Test it with:
+
+- `"What is my total spending on food this month?"`
+- `"Which category did I spend the most on?"`
+- `"What is my savings rate (income minus expenses) for each month?"`
+
+**Task 2 — Reflection without execution feedback**
+
+Write `refine_sql(question, sql, schema, model)` that reviews the SQL text only and returns `(feedback, refined_sql)`. Find a question where V1 is wrong but V2 fixes it just from reading the query.
+
+**Task 3 — Reflection with execution feedback**
+
+Write `refine_sql_with_output(question, sql, df_result, schema, model)` that also sees the actual query result. The key challenge: make it catch the case where `type = 'expense'` rows need to be filtered (not summed with income). Force this bug by asking:
+
+- `"What is my net spending per category?"` — V1 will likely mix income and expense rows.
+
+**Task 4 — End-to-end workflow**
+
+Wire it all into `run_finance_workflow(db_path, question)` that runs all 5 steps:
+
+```
+schema → V1 → execute → reflect → V2 → execute
+```
+
+Print each step's output using `utils.print_html`.
+
+**Task 5 — Experiment**
+
+Run the same question with two different models for generation vs reflection (e.g., `gpt-4o-mini` for generation, `gpt-4.1` for reflection). Compare whether the reflection quality differs.
+
+---
+
+### What You'll Learn
+
+| Lab Concept | How This Assignment Uses It |
+|---|---|
+| Event-sourced schema | Derive totals from raw events, not stored aggregates |
+| `generate_sql` | Practice writing a clean prompt with schema injection |
+| `refine_sql` without feedback | Understand where text-only reflection fails |
+| `refine_sql` with execution output | See why grounding reflection in real data matters (the sign/filter bug) |
+| `run_workflow` end-to-end | Understand how the full agentic loop chains together |
+| Multi-model setup | Learn when to use a cheap model vs a strong one |
+
+---
+
+### Bonus Challenge
+
+Add a **third reflection pass**: if V2 still has an `error` column in the result (from `utils.execute_sql`), automatically retry once more with the error message as feedback. This is the real-world pattern for self-healing agents.
