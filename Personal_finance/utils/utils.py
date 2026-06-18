@@ -19,6 +19,19 @@ from IPython.display import display, HTML
 
 
 
+def execute_sql(query, db_path):
+    """remove prefix suffix & Execute sql query"""
+
+    q = query.strip().removeprefix("```sql").removesuffix("```").strip()
+    conn = sqlite3.connect(db_path)
+    try:
+        return pd.read_sql_query(q, conn)
+    except Exception as e:
+        return pd.DataFrame({"error": [str(e)]})
+    finally:
+        conn.close()
+
+
 
 def get_schema(db_path: str) -> str:
     """
@@ -30,9 +43,6 @@ def get_schema(db_path: str) -> str:
     rows = cur.fetchall()
     conn.close()
     return "table name: transactions\n" + "\n".join([f"{r[1]} ({r[2]})" for r in rows])
-
-
-
 
 
 # ================================
