@@ -38,3 +38,8 @@ dependencies = [
     "vertexai>=1.71.1",
     "wikipedia>=1.4.0",
 ]
+
+[tool.uv.workspace]
+members = [
+    "family_locator",
+]
